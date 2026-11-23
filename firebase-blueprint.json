@@ -1,0 +1,257 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated user profile mapping to active store and role.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Firebase Auth UID of the user." },
+        "email": { "type": "string", "description": "Verified lowercase Google email." },
+        "displayName": { "type": "string", "description": "Display name of the user." },
+        "activeStoreId": { "type": "string", "description": "Active store ID the user belongs to." },
+        "role": { "type": "string", "enum": ["OWNER", "KASIR"], "description": "User role in active store." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp on creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp on update." }
+      },
+      "required": ["userId", "email", "displayName", "activeStoreId", "role", "createdAt", "updatedAt"]
+    },
+    "StoreProfile": {
+      "title": "StoreProfile",
+      "description": "Store profile, dynamic branding, settings, and membership list.",
+      "type": "object",
+      "properties": {
+        "ownerUid": { "type": "string" },
+        "memberUids": { "type": "array" },
+        "memberEmails": { "type": "array" },
+        "name": { "type": "string" },
+        "businessType": { "type": "string" },
+        "logoIconKey": { "type": "string", "enum": ["STORE", "CART", "COFFEE", "FOOD", "BAG", "SPARK"] },
+        "logoBase64": { "type": "string" },
+        "themePaletteKey": { "type": "string", "enum": ["EMERALD", "SAGE", "TEAL", "OCEAN", "TERRACOTTA"] },
+        "address": { "type": "string" },
+        "whatsapp": { "type": "string" },
+        "email": { "type": "string" },
+        "ownerName": { "type": "string" },
+        "description": { "type": "string" },
+        "receiptFooter": { "type": "string" },
+        "taxPercent": { "type": "number" },
+        "defaultDiscountPercent": { "type": "number" },
+        "paymentGatewayProvider": { "type": "string", "enum": ["MIDTRANS"] },
+        "bankTransferInfo": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "ownerUid", "memberUids", "memberEmails", "name", "logoIconKey",
+        "themePaletteKey", "address", "whatsapp", "email", "ownerName",
+        "description", "receiptFooter", "taxPercent", "defaultDiscountPercent",
+        "paymentGatewayProvider", "bankTransferInfo", "createdAt", "updatedAt"
+      ]
+    },
+    "StaffInvite": {
+      "title": "StaffInvite",
+      "description": "Invitation for a Kasir staff member by Google email.",
+      "type": "object",
+      "properties": {
+        "storeId": { "type": "string" },
+        "storeName": { "type": "string" },
+        "ownerUid": { "type": "string" },
+        "staffEmail": { "type": "string" },
+        "staffName": { "type": "string" },
+        "role": { "type": "string", "enum": ["KASIR"] },
+        "canAccessKasir": { "type": "boolean" },
+        "canManageProducts": { "type": "boolean" },
+        "canManageCategories": { "type": "boolean" },
+        "canViewTransactions": { "type": "boolean" },
+        "canViewReports": { "type": "boolean" },
+        "canManageSettings": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["PENDING", "ACCEPTED", "REVOKED"] },
+        "acceptedByUid": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "storeId", "storeName", "ownerUid", "staffEmail", "staffName", "role",
+        "canAccessKasir", "canManageProducts", "canManageCategories",
+        "canViewTransactions", "canViewReports", "canManageSettings",
+        "status", "createdAt", "updatedAt"
+      ]
+    },
+    "StaffMember": {
+      "title": "StaffMember",
+      "description": "Active staff member and permissions in a store.",
+      "type": "object",
+      "properties": {
+        "staffUid": { "type": "string" },
+        "storeId": { "type": "string" },
+        "ownerUid": { "type": "string" },
+        "inviteId": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["OWNER", "KASIR"] },
+        "active": { "type": "boolean" },
+        "canAccessKasir": { "type": "boolean" },
+        "canManageProducts": { "type": "boolean" },
+        "canManageCategories": { "type": "boolean" },
+        "canViewTransactions": { "type": "boolean" },
+        "canViewReports": { "type": "boolean" },
+        "canManageSettings": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "staffUid", "storeId", "ownerUid", "inviteId", "email", "displayName",
+        "role", "active", "canAccessKasir", "canManageProducts",
+        "canManageCategories", "canViewTransactions", "canViewReports",
+        "canManageSettings", "createdAt", "updatedAt"
+      ]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Product category within a store.",
+      "type": "object",
+      "properties": {
+        "storeId": { "type": "string" },
+        "ownerUid": { "type": "string" },
+        "memberUids": { "type": "array" },
+        "memberEmails": { "type": "array" },
+        "name": { "type": "string" },
+        "colorHex": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["storeId", "ownerUid", "memberUids", "memberEmails", "name", "colorHex", "createdAt", "updatedAt"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Product inventory item with cost price, sell price, stock, and barcode.",
+      "type": "object",
+      "properties": {
+        "storeId": { "type": "string" },
+        "ownerUid": { "type": "string" },
+        "memberUids": { "type": "array" },
+        "memberEmails": { "type": "array" },
+        "name": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "categoryName": { "type": "string" },
+        "barcode": { "type": "string" },
+        "costPrice": { "type": "integer" },
+        "sellPrice": { "type": "integer" },
+        "stock": { "type": "integer" },
+        "unit": { "type": "string" },
+        "minStockAlert": { "type": "integer" },
+        "imageBase64": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "storeId", "ownerUid", "memberUids", "memberEmails", "name",
+        "categoryId", "categoryName", "barcode", "costPrice", "sellPrice",
+        "stock", "unit", "minStockAlert", "createdAt", "updatedAt"
+      ]
+    },
+    "PosTransaction": {
+      "title": "PosTransaction",
+      "description": "Completed POS sales transaction with itemized breakdown and verified payment.",
+      "type": "object",
+      "properties": {
+        "storeId": { "type": "string" },
+        "ownerUid": { "type": "string" },
+        "memberUids": { "type": "array" },
+        "memberEmails": { "type": "array" },
+        "invoiceNumber": { "type": "string" },
+        "cashierUid": { "type": "string" },
+        "cashierName": { "type": "string" },
+        "note": { "type": "string" },
+        "items": { "type": "array" },
+        "subtotal": { "type": "integer" },
+        "discountAmount": { "type": "integer" },
+        "discountType": { "type": "string", "enum": ["NOMINAL", "PERCENT"] },
+        "taxAmount": { "type": "integer" },
+        "totalAmount": { "type": "integer" },
+        "totalCost": { "type": "integer" },
+        "totalProfit": { "type": "integer" },
+        "paymentMethod": { "type": "string", "enum": ["TUNAI", "QRIS", "VIRTUAL_ACCOUNT", "EWALLET", "TRANSFER"] },
+        "paymentStatus": { "type": "string", "enum": ["VERIFIED"] },
+        "gatewayProvider": { "type": "string" },
+        "gatewayOrderId": { "type": "string" },
+        "cashReceived": { "type": "integer" },
+        "changeAmount": { "type": "integer" },
+        "customerId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "pointsEarned": { "type": "integer" },
+        "pointsRedeemed": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "storeId", "ownerUid", "memberUids", "memberEmails", "invoiceNumber",
+        "cashierUid", "cashierName", "note", "items", "subtotal", "discountAmount",
+        "discountType", "taxAmount", "totalAmount", "totalCost", "totalProfit",
+        "paymentMethod", "paymentStatus", "gatewayProvider", "gatewayOrderId",
+        "cashReceived", "changeAmount", "createdAt", "updatedAt"
+      ]
+    },
+    "Customer": {
+      "title": "Customer",
+      "description": "Store customer profile with contact info, purchase totals, and loyalty points.",
+      "type": "object",
+      "properties": {
+        "storeId": { "type": "string" },
+        "ownerUid": { "type": "string" },
+        "memberUids": { "type": "array" },
+        "memberEmails": { "type": "array" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "address": { "type": "string" },
+        "notes": { "type": "string" },
+        "loyaltyPoints": { "type": "integer" },
+        "totalSpent": { "type": "integer" },
+        "visitCount": { "type": "integer" },
+        "lastPurchaseAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "storeId", "ownerUid", "memberUids", "memberEmails", "name",
+        "phone", "email", "address", "notes", "loyaltyPoints",
+        "totalSpent", "visitCount", "createdAt", "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User profile and active store pointer."
+    },
+    "/staffInvites/{inviteId}": {
+      "schema": { "$ref": "#/entities/StaffInvite" },
+      "description": "Kasir email invitations and permission presets."
+    },
+    "/stores/{storeId}": {
+      "schema": { "$ref": "#/entities/StoreProfile" },
+      "description": "Store branding, configuration, and access membership."
+    },
+    "/stores/{storeId}/staff/{staffUid}": {
+      "schema": { "$ref": "#/entities/StaffMember" },
+      "description": "Store staff roster and granular feature permissions."
+    },
+    "/stores/{storeId}/categories/{categoryId}": {
+      "schema": { "$ref": "#/entities/Category" },
+      "description": "Product categories scoped to store members."
+    },
+    "/stores/{storeId}/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Store products with cost, sell price, stock, and barcode."
+    },
+    "/stores/{storeId}/customers/{customerId}": {
+      "schema": { "$ref": "#/entities/Customer" },
+      "description": "Customer profiles, contact details, and loyalty point balances."
+    },
+    "/stores/{storeId}/transactions/{transactionId}": {
+      "schema": { "$ref": "#/entities/PosTransaction" },
+      "description": "Verified POS transactions and receipt records."
+    }
+  }
+}

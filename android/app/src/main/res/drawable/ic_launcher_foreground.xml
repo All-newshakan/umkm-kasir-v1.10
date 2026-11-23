@@ -1,0 +1,28 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Subtle inner highlight badge -->
+    <path
+        android:fillColor="#10B981"
+        android:pathData="M54,18 A36,36 0 1,1 53.99,18 Z" />
+    <!-- Storefront awning / roof -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M33,40 L75,40 L78,48 C78,50.5 76,52.5 73.5,52.5 C71.5,52.5 69.8,51.2 69.2,49.4 C68.6,51.2 66.9,52.5 64.8,52.5 C62.7,52.5 61,51.2 60.4,49.4 C59.8,51.2 58.1,52.5 56,52.5 C53.9,52.5 52.2,51.2 51.6,49.4 C51,51.2 49.3,52.5 47.2,52.5 C45.1,52.5 43.4,51.2 42.8,49.4 C42.2,51.2 40.5,52.5 38.5,52.5 C36,52.5 34,50.5 34,48 Z" />
+    <!-- Store body & counter -->
+    <path
+        android:fillColor="#ECFDF5"
+        android:pathData="M36,54 L72,54 L72,72 C72,73.65 70.65,75 69,75 L39,75 C37.35,75 36,73.65 36,72 Z" />
+    <!-- POS terminal / receipt accent inside store -->
+    <path
+        android:fillColor="#047857"
+        android:pathData="M43,59 L65,59 L65,64 L43,64 Z" />
+    <path
+        android:fillColor="#059669"
+        android:pathData="M46,67 L55,67 L55,75 L46,75 Z" />
+    <path
+        android:fillColor="#10B981"
+        android:pathData="M58,67 L64,67 L64,71 L58,71 Z" />
+</vector>

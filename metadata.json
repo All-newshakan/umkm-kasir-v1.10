@@ -1,0 +1,6 @@
+{
+  "name": "KASIR UMKM",
+  "description": "Aplikasi Point of Sale (POS) modern untuk membantu pelaku UMKM mengelola transaksi penjualan, produk, stok barang, pembayaran QRIS, dan laporan keuangan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

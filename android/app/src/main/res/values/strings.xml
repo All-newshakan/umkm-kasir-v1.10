@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">KASIR UMKM</string>
+    <string name="title_activity_main">KASIR UMKM</string>
+    <string name="package_name">com.aistudio.kasirumkm.qzvtmk</string>
+    <string name="custom_url_scheme">com.aistudio.kasirumkm.qzvtmk</string>
+</resources>

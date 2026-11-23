@@ -1,0 +1,17 @@
+{
+  "firestore": [
+    {
+      "database": "ai-studio-kasirumkm-a126d141-24e0-4ee9-bf87-c616ecc0d8b4",
+      "rules": "firestore.rules"
+    }
+  ],
+  "emulators": {
+    "firestore": {
+      "host": "127.0.0.1",
+      "port": 8085
+    },
+    "ui": {
+      "enabled": false
+    }
+  }
+}
