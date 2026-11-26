@@ -377,41 +377,14 @@ function createSupabasePollingSubscription(params: {
 
 export async function ensureUserProfile(user: User): Promise<void> {
   if (!isSupabaseConfigured || !supabase) return;
-  const emailLower = (user.email || '').trim().toLowerCase();
-  const displayName = getUserDisplayName(user);
-  const avatarUrl = getUserAvatarUrl(user) || '';
 
-  const { data: existing, error: selectErr } = await supabase
-    .from('profiles')
-    .select('id, display_name, avatar_url')
-    .eq('id', user.id)
-    .maybeSingle();
+  // Profile creation and legacy OWNER-link repair must run in a SECURITY DEFINER
+  // RPC. A direct client INSERT can be rejected by profiles RLS and prevent the
+  // subsequent owner-store restoration from running.
+  const { error } = await supabase.rpc('repair_my_owner_store_access');
+  if (error) throw error;
 
-  if (selectErr) throw selectErr;
-
-  if (!existing) {
-    const { error: insertErr } = await supabase.from('profiles').insert({
-      id: user.id,
-      email: emailLower,
-      display_name: displayName.slice(0, 100),
-      avatar_url: avatarUrl,
-      role: 'OWNER',
-    });
-    if (insertErr) throw insertErr;
-    emitLocalChange(`profile:${user.id}`);
-  } else if (
-    (!existing.display_name && displayName) ||
-    (!existing.avatar_url && avatarUrl)
-  ) {
-    await supabase
-      .from('profiles')
-      .update({
-        display_name: (existing.display_name as string) || displayName.slice(0, 100),
-        avatar_url: (existing.avatar_url as string) || avatarUrl,
-      })
-      .eq('id', user.id);
-    emitLocalChange(`profile:${user.id}`);
-  }
+  emitLocalChange(`profile:${user.id}`, `stores:${user.id}`, 'stores:all');
 }
 
 export function subscribeUserProfile(
