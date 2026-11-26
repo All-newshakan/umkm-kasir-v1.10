@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   Award,
   Banknote,
@@ -71,7 +71,7 @@ export const CashierView: React.FC<CashierViewProps> = ({
   onTransactionCompleted,
   onNotify,
 }) => {
-  const [search, setSearch] = useState('');
+  const transactionInProgressRef = useRef(false);\n  const [search, setSearch] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('ALL');
   const [cartLines, setCartLines] = useState<CartLine[]>([]);
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -265,7 +265,8 @@ export const CashierView: React.FC<CashierViewProps> = ({
     gatewayProvider: string;
     gatewayOrderId: string;
   }) => {
-    if (cartLines.length === 0) return;
+    if (cartLines.length === 0 || transactionInProgressRef.current) return;
+    transactionInProgressRef.current = true;
     setProcessingTx(true);
     try {
       const tx = await completeTransactionAndDecrementStock({
@@ -300,6 +301,7 @@ export const CashierView: React.FC<CashierViewProps> = ({
     } catch (err) {
       onNotify('error', formatFriendlyDatabaseError(err));
     } finally {
+      transactionInProgressRef.current = false;
       setProcessingTx(false);
     }
   };
