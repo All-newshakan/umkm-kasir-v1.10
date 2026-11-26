@@ -103,7 +103,7 @@ export async function createMidtransCharge(params: {
   }
   const headers = await getAuthenticatedRequestHeaders();
   const { data: sessionData } = await supabase!.auth.getSession();
-  const orderId = `POS-${sessionData.session!.user.id.slice(0, 8)}-${params.orderId.replace(/^POS-/, '')}`.slice(0, 50);
+  const orderId = `POS-${sessionData.session!.user.id}-${crypto.randomUUID().replace(/-/g, '').slice(0, 9)}`;
   const res = await fetch(`${baseUrl}/api/midtrans/charge`, {
     method: 'POST',
     headers,
