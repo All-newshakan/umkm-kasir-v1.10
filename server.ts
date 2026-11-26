@@ -110,7 +110,7 @@ async function getAuthenticatedUserId(req: express.Request): Promise<string | nu
 }
 
 function isOrderOwnedByUser(orderId: string, userId: string): boolean {
-  return orderId.startsWith(`POS-${userId.slice(0, 8)}-`);
+  return orderId.startsWith(`POS-${userId}-`);
 }
 
 app.get('/api/health', (_req, res) => {
