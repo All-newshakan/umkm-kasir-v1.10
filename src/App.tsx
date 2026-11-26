@@ -36,7 +36,6 @@ import {
 } from './lib/supabase';
 import {
   ensureUserProfile,
-  repairMyOwnerStoreAccess,
   subscribeAllStaff,
   subscribeCategories,
   subscribeCustomers,
@@ -159,9 +158,6 @@ function MainApp() {
         void (async () => {
           try {
             await ensureUserProfile(nextUser);
-            // Restore the active OWNER store link if an earlier app version
-            // left the profile/member relation incomplete.
-            await repairMyOwnerStoreAccess();
           } catch (err) {
             notify('error', formatFriendlyDatabaseError(err));
           }
