@@ -237,6 +237,16 @@ export function formatFriendlyDatabaseError(err: unknown): string {
         : String(err);
 
   const lower = raw.toLowerCase();
+  if (
+    lower.includes('pgrst202') ||
+    lower.includes('could not find the function public.create_store_with_owner') ||
+    lower.includes('function public.create_store_with_owner')
+  ) {
+    return 'Struktur database KASIR UMKM belum lengkap atau belum diperbarui. Jalankan seluruh file supabase/migrations/001_kasir_umkm_schema.sql di Supabase SQL Editor, lalu coba lagi.';
+  }
+  if (lower.includes('pgrst205') || lower.includes('could not find the table')) {
+    return 'Tabel database KASIR UMKM belum tersedia. Jalankan seluruh file supabase/migrations/001_kasir_umkm_schema.sql di Supabase SQL Editor.';
+  }
   if (lower.includes('invalid login credentials')) {
     return 'Email atau kata sandi tidak cocok.';
   }
