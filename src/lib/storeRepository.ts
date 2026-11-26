@@ -375,6 +375,25 @@ function createSupabasePollingSubscription(params: {
   };
 }
 
+export async function repairMyOwnerStoreAccess(): Promise<string | null> {
+  if (!isSupabaseConfigured || !supabase) return null;
+  const { data, error } = await supabase.rpc('repair_my_owner_store_access');
+  if (error) {
+    // The migration may not have been applied yet. Keep sign-in usable and
+    // let the onboarding screen continue; surface other database failures.
+    const message = error.message.toLowerCase();
+    if (message.includes('repair_my_owner_store_access') && message.includes('schema cache')) {
+      return null;
+    }
+    throw error;
+  }
+  const storeId = typeof data === 'string' && isUuid(data) ? data : null;
+  if (storeId) {
+    emitLocalChange('stores:all', `store:${storeId}`, `settings:${storeId}`);
+  }
+  return storeId;
+}
+
 export async function ensureUserProfile(user: User): Promise<void> {
   if (!isSupabaseConfigured || !supabase) return;
   const emailLower = (user.email || '').trim().toLowerCase();
