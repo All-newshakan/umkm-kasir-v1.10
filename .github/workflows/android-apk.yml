@@ -67,9 +67,11 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      # Invoke the wrapper through bash so builds do not depend on the
+      # executable bit being preserved by Git/checkout on the runner.
       - name: Build Android debug APK
         working-directory: android
-        run: ./gradlew --no-daemon assembleDebug
+        run: bash ./gradlew --no-daemon assembleDebug
 
       - name: Prepare release signing key
         if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' && env.STORE_PASSWORD != '' && env.KEY_ALIAS != '' && env.KEY_PASSWORD != '' }}
@@ -79,7 +81,7 @@ jobs:
       - name: Build signed release APK
         if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' && env.STORE_PASSWORD != '' && env.KEY_ALIAS != '' && env.KEY_PASSWORD != '' }}
         working-directory: android
-        run: ./gradlew --no-daemon assembleRelease
+        run: bash ./gradlew --no-daemon assembleRelease
 
       - name: Upload signed release APK
         if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' && env.STORE_PASSWORD != '' && env.KEY_ALIAS != '' && env.KEY_PASSWORD != '' }}
