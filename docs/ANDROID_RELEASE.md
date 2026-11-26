@@ -21,7 +21,7 @@ Aktifkan Google provider di Authentication > Providers dan isi OAuth Client ID/S
 
 ## Database Supabase
 
-Jika skema database belum pernah dipasang, jalankan `supabase/migrations/001_kasir_umkm_schema.sql` satu kali melalui Supabase Dashboard > SQL Editor. Jangan jalankan ulang pada database produksi tanpa backup dan peninjauan migrasi.
+Jika skema database belum pernah dipasang, jalankan `supabase/migrations/001_kasir_umkm_schema.sql` satu kali melalui Supabase Dashboard > SQL Editor. Setelah itu, jalankan `supabase/migrations/002_secure_checkout.sql` untuk menghitung harga dari data produk database dan memvalidasi stok saat checkout. Database yang sudah memakai skema 001 cukup menjalankan migrasi 002. Jangan jalankan migrasi pada database produksi tanpa backup.
 
 ## Build APK
 
