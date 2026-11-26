@@ -155,9 +155,13 @@ function MainApp() {
       setUser(nextUser);
       setAuthReady(true);
       if (nextUser) {
-        void ensureUserProfile(nextUser).catch((err) => {
-          notify('error', formatFriendlyDatabaseError(err));
-        });
+        void (async () => {
+          try {
+            await ensureUserProfile(nextUser);
+          } catch (err) {
+            notify('error', formatFriendlyDatabaseError(err));
+          }
+        })();
       } else {
         setUserProfile(null);
         setProfileLoaded(false);

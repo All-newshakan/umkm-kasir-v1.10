@@ -377,41 +377,14 @@ function createSupabasePollingSubscription(params: {
 
 export async function ensureUserProfile(user: User): Promise<void> {
   if (!isSupabaseConfigured || !supabase) return;
-  const emailLower = (user.email || '').trim().toLowerCase();
-  const displayName = getUserDisplayName(user);
-  const avatarUrl = getUserAvatarUrl(user) || '';
 
-  const { data: existing, error: selectErr } = await supabase
-    .from('profiles')
-    .select('id, display_name, avatar_url')
-    .eq('id', user.id)
-    .maybeSingle();
+  // Profile creation and legacy OWNER-link repair must run in a SECURITY DEFINER
+  // RPC. A direct client INSERT can be rejected by profiles RLS and prevent the
+  // subsequent owner-store restoration from running.
+  const { error } = await supabase.rpc('repair_my_owner_store_access');
+  if (error) throw error;
 
-  if (selectErr) throw selectErr;
-
-  if (!existing) {
-    const { error: insertErr } = await supabase.from('profiles').insert({
-      id: user.id,
-      email: emailLower,
-      display_name: displayName.slice(0, 100),
-      avatar_url: avatarUrl,
-      role: 'OWNER',
-    });
-    if (insertErr) throw insertErr;
-    emitLocalChange(`profile:${user.id}`);
-  } else if (
-    (!existing.display_name && displayName) ||
-    (!existing.avatar_url && avatarUrl)
-  ) {
-    await supabase
-      .from('profiles')
-      .update({
-        display_name: (existing.display_name as string) || displayName.slice(0, 100),
-        avatar_url: (existing.avatar_url as string) || avatarUrl,
-      })
-      .eq('id', user.id);
-    emitLocalChange(`profile:${user.id}`);
-  }
+  emitLocalChange(`profile:${user.id}`, `stores:${user.id}`, 'stores:all');
 }
 
 export function subscribeUserProfile(
@@ -778,38 +751,27 @@ export async function acceptStaffInvite(params: {
 
 export async function updateStoreSettings(store: StoreProfile): Promise<void> {
   const client = getSupabaseClientOrThrow();
-  const { error: storeErr } = await client
-    .from('stores')
-    .update({
-      name: store.name.trim().slice(0, 60),
-      business_type: (store.businessType || '').trim().slice(0, 60),
-      logo_icon_key: store.logoIconKey,
-      logo_base64: store.logoBase64 ?? null,
-      theme_palette_key: store.themePaletteKey,
-      address: store.address.trim().slice(0, 240),
-      whatsapp: store.whatsapp.trim().slice(0, 40),
-      email: store.email.trim().slice(0, 160),
-      owner_name: store.ownerName.trim().slice(0, 100),
-      description: store.description.trim().slice(0, 300),
-    })
-    .eq('id', store.id);
-  if (storeErr) throw storeErr;
-
-  const { error: settingsErr } = await client.from('store_settings').upsert(
-    {
-      store_id: store.id,
-      receipt_footer: store.receiptFooter.trim().slice(0, 240),
-      tax_percent: Math.min(100, Math.max(0, Number(store.taxPercent || 0))),
-      default_discount_percent: Math.min(
-        100,
-        Math.max(0, Number(store.defaultDiscountPercent || 0))
-      ),
-      payment_gateway_provider: 'MIDTRANS',
-      bank_transfer_info: store.bankTransferInfo.trim().slice(0, 240),
-    },
-    { onConflict: 'store_id' }
-  );
-  if (settingsErr) throw settingsErr;
+  const { error } = await client.rpc('save_store_settings', {
+    p_store_id: store.id,
+    p_name: store.name.trim().slice(0, 60),
+    p_business_type: (store.businessType || '').trim().slice(0, 60),
+    p_logo_icon_key: store.logoIconKey,
+    p_logo_base64: store.logoBase64 ?? null,
+    p_theme_palette_key: store.themePaletteKey,
+    p_address: store.address.trim().slice(0, 240),
+    p_whatsapp: store.whatsapp.trim().slice(0, 40),
+    p_email: store.email.trim().slice(0, 160),
+    p_owner_name: store.ownerName.trim().slice(0, 100),
+    p_description: store.description.trim().slice(0, 300),
+    p_receipt_footer: store.receiptFooter.trim().slice(0, 240),
+    p_tax_percent: Math.min(100, Math.max(0, Number(store.taxPercent || 0))),
+    p_default_discount_percent: Math.min(
+      100,
+      Math.max(0, Number(store.defaultDiscountPercent || 0))
+    ),
+    p_bank_transfer_info: store.bankTransferInfo.trim().slice(0, 240),
+  });
+  if (error) throw error;
 
   emitLocalChange(`store:${store.id}`, `settings:${store.id}`, 'stores:all');
 }
