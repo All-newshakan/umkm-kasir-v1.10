@@ -71,7 +71,8 @@ export const CashierView: React.FC<CashierViewProps> = ({
   onTransactionCompleted,
   onNotify,
 }) => {
-  const transactionInProgressRef = useRef(false);\n  const [search, setSearch] = useState('');
+  const transactionInProgressRef = useRef(false);
+  const [search, setSearch] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('ALL');
   const [cartLines, setCartLines] = useState<CartLine[]>([]);
   const [scannerOpen, setScannerOpen] = useState(false);
