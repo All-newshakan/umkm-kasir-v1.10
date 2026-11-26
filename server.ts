@@ -55,7 +55,7 @@ app.get('/api/app/apk-info', (_req, res) => {
       filename: 'kasir-umkm-release.apk',
       sizeBytes: 0,
       minAndroid: 'Android 8.0+ (API 26)',
-      versionName: '1.1.1',
+      versionName: '1.1.0',
       downloadUrl: '/downloads/kasir-umkm-release.apk',
     });
     return;
@@ -66,7 +66,7 @@ app.get('/api/app/apk-info', (_req, res) => {
     filename: 'kasir-umkm-release.apk',
     sizeBytes: stat.size,
     minAndroid: 'Android 8.0+ (API 26)',
-    versionName: '1.1.1',
+    versionName: '1.1.0',
     downloadUrl: '/downloads/kasir-umkm-release.apk',
   });
 });
