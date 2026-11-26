@@ -36,6 +36,7 @@ import {
 } from './lib/supabase';
 import {
   ensureUserProfile,
+  repairMyOwnerStoreAccess,
   subscribeAllStaff,
   subscribeCategories,
   subscribeCustomers,
@@ -155,9 +156,16 @@ function MainApp() {
       setUser(nextUser);
       setAuthReady(true);
       if (nextUser) {
-        void ensureUserProfile(nextUser).catch((err) => {
-          notify('error', formatFriendlyDatabaseError(err));
-        });
+        void (async () => {
+          try {
+            await ensureUserProfile(nextUser);
+            // Restore the active OWNER store link if an earlier app version
+            // left the profile/member relation incomplete.
+            await repairMyOwnerStoreAccess();
+          } catch (err) {
+            notify('error', formatFriendlyDatabaseError(err));
+          }
+        })();
       } else {
         setUserProfile(null);
         setProfileLoaded(false);
