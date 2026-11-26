@@ -93,6 +93,26 @@ function getAuthHeader(serverKey: string) {
   return `Basic ${Buffer.from(`${serverKey}:`).toString('base64')}`;
 }
 
+async function getAuthenticatedUserId(req: express.Request): Promise<string | null> {
+  const authorization = req.headers.authorization || '';
+  const token = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : '';
+  const supabaseUrl = (process.env.VITE_SUPABASE_URL || '').trim().replace(/\/+$/, '');
+  const anonKey = (process.env.VITE_SUPABASE_ANON_KEY || '').trim();
+  if (!token || !supabaseUrl || !anonKey) return null;
+  try {
+    const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: { apikey: anonKey, Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) return null;
+    const user = (await response.json()) as { id?: string };
+    return typeof user.id === 'string' && user.id ? user.id : null;
+  } catch { return null; }
+}
+
+function isOrderOwnedByUser(orderId: string, userId: string): boolean {
+  return orderId.startsWith(`POS-${userId}-`);
+}
+
 app.get('/api/health', (_req, res) => {
   const supabaseUrl = (process.env.VITE_SUPABASE_URL || '').trim();
   const supabaseAnonKey = (process.env.VITE_SUPABASE_ANON_KEY || '').trim();
@@ -137,6 +157,11 @@ interface ChargeRequestBody {
 
 app.post('/api/midtrans/charge', async (req, res) => {
   try {
+    const userId = await getAuthenticatedUserId(req);
+    if (!userId) {
+      res.status(401).json({ error: 'Sesi login tidak valid. Silakan masuk kembali.' });
+      return;
+    }
     const { serverKey, baseUrl, isProduction } = getMidtransConfig();
     if (!serverKey) {
       res.status(400).json({
@@ -147,12 +172,16 @@ app.post('/api/midtrans/charge', async (req, res) => {
 
     const body = (req.body || {}) as ChargeRequestBody;
     const grossAmount = Math.round(Number(body.grossAmount || 0));
-    const orderId = (body.orderId || `KSR-${Date.now()}`).trim().slice(0, 50);
+    const orderId = (body.orderId || '').trim().slice(0, 50);
+    if (!isOrderOwnedByUser(orderId, userId)) {
+      res.status(403).json({ error: 'ID transaksi tidak sesuai dengan akun yang sedang login.' });
+      return;
+    }
     const method = body.method || 'QRIS';
     const subChannel = (body.subChannel || '').trim().toLowerCase();
     const customerName = (body.customerName || 'Pelanggan Toko').trim().slice(0, 60) || 'Pelanggan Toko';
 
-    if (grossAmount <= 0) {
+    if (!Number.isSafeInteger(grossAmount) || grossAmount <= 0 || grossAmount > 1000000000) {
       res.status(400).json({ error: 'Nominal pembayaran harus lebih dari Rp 0.' });
       return;
     }
@@ -270,6 +299,15 @@ app.post('/api/midtrans/charge', async (req, res) => {
 
 app.get('/api/midtrans/status/:orderId', async (req, res) => {
   try {
+    const userId = await getAuthenticatedUserId(req);
+    if (!userId) {
+      res.status(401).json({ error: 'Sesi login tidak valid. Silakan masuk kembali.' });
+      return;
+    }
+    if (!isOrderOwnedByUser(req.params.orderId, userId)) {
+      res.status(403).json({ error: 'Anda tidak memiliki akses ke transaksi ini.' });
+      return;
+    }
     const { serverKey, baseUrl } = getMidtransConfig();
     if (!serverKey) {
       res.status(400).json({ error: 'Midtrans Server Key belum dikonfigurasi.' });
@@ -304,6 +342,15 @@ app.get('/api/midtrans/status/:orderId', async (req, res) => {
 
 app.post('/api/midtrans/cancel/:orderId', async (req, res) => {
   try {
+    const userId = await getAuthenticatedUserId(req);
+    if (!userId) {
+      res.status(401).json({ error: 'Sesi login tidak valid. Silakan masuk kembali.' });
+      return;
+    }
+    if (!isOrderOwnedByUser(req.params.orderId, userId)) {
+      res.status(403).json({ error: 'Anda tidak memiliki akses ke transaksi ini.' });
+      return;
+    }
     const { serverKey, baseUrl } = getMidtransConfig();
     if (!serverKey) {
       res.json({ cancelled: false });

@@ -114,8 +114,9 @@ export const AuthLoginView: React.FC<AuthLoginViewProps> = ({
       setRememberMePreference(rememberMe);
       const client = getSupabaseClientOrThrow();
       if (emailMode === 'REGISTER') {
+        const normalizedEmail = email.trim();
         const { data, error } = await client.auth.signUp({
-          email: email.trim(),
+          email: normalizedEmail,
           password,
           options: {
             data: {
@@ -123,14 +124,49 @@ export const AuthLoginView: React.FC<AuthLoginViewProps> = ({
             },
           },
         });
-        if (error) throw error;
+
+        if (error) {
+          const message = error.message.toLowerCase();
+          const isEmailRateLimit =
+            message.includes('email rate limit exceeded') ||
+            message.includes('rate limit') ||
+            message.includes('too many requests');
+
+          // A confirmed account may already exist even when a repeated signup
+          // attempt is blocked by Supabase's email-delivery rate limit.
+          // Try the normal password login; Supabase still verifies credentials.
+          if (!isEmailRateLimit) throw error;
+
+          const { error: loginError } = await client.auth.signInWithPassword({
+            email: normalizedEmail,
+            password,
+          });
+          if (loginError) {
+            throw new Error(
+              'Akun sudah terdeteksi atau pendaftaran dibatasi oleh Supabase. Coba gunakan tab Masuk dengan email dan kata sandi akun yang sudah dikonfirmasi.'
+            );
+          }
+          onNotify('success', 'Email sudah terdaftar dan berhasil masuk. Lanjutkan pengaturan toko.');
+          return;
+        }
+
         if (data.session) {
           onNotify('success', 'Akun berhasil dibuat. Lanjutkan pengaturan toko.');
         } else {
-          onNotify(
-            'info',
-            'Akun dibuat! Cek kotak masuk email Anda untuk konfirmasi sebelum masuk (atau matikan Confirm Email di Supabase Auth).'
-          );
+          // When email confirmation is enabled, a confirmed account can still
+          // establish a session through the standard password sign-in flow.
+          const { error: loginError } = await client.auth.signInWithPassword({
+            email: normalizedEmail,
+            password,
+          });
+          if (loginError) {
+            onNotify(
+              'info',
+              'Akun berhasil dibuat. Jika email belum dikonfirmasi, selesaikan konfirmasi terlebih dahulu sebelum masuk.'
+            );
+            return;
+          }
+          onNotify('success', 'Akun terkonfirmasi dan berhasil masuk. Lanjutkan pengaturan toko.');
         }
       } else {
         const { error } = await client.auth.signInWithPassword({

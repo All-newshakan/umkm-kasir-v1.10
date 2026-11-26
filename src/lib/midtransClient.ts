@@ -6,6 +6,18 @@ import type {
   PaymentMethod,
 } from '../types/models';
 import { getCartLineTotals } from '../types/models';
+import { supabase } from './supabase';
+
+
+async function getAuthenticatedRequestHeaders(): Promise<Record<string, string>> {
+  if (!supabase) throw new Error('Supabase belum dikonfigurasi. Silakan masuk kembali.');
+  const { data, error } = await supabase.auth.getSession();
+  const session = data.session;
+  if (error || !session?.access_token || !session.user.id) {
+    throw new Error('Sesi login tidak valid. Silakan masuk kembali.');
+  }
+  return { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` };
+}
 
 export interface ApkDistributionInfo {
   available: boolean;
@@ -89,11 +101,14 @@ export async function createMidtransCharge(params: {
       'Proxy Midtrans opsional belum dikonfigurasi untuk APK (VITE_MIDTRANS_PROXY_URL). Gunakan metode Tunai atau QRIS Manual.'
     );
   }
+  const headers = await getAuthenticatedRequestHeaders();
+  const { data: sessionData } = await supabase!.auth.getSession();
+  const orderId = `POS-${sessionData.session!.user.id}-${crypto.randomUUID().replace(/-/g, '').slice(0, 9)}`;
   const res = await fetch(`${baseUrl}/api/midtrans/charge`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({
-      orderId: params.orderId,
+      orderId,
       grossAmount: Math.round(params.grossAmount),
       method: params.method,
       subChannel: params.subChannel,
@@ -127,7 +142,8 @@ export async function checkMidtransStatus(orderId: string): Promise<{
   if (baseUrl === null) {
     throw new Error('Proxy Midtrans opsional belum dikonfigurasi.');
   }
-  const res = await fetch(`${baseUrl}/api/midtrans/status/${encodeURIComponent(orderId)}`);
+  const headers = await getAuthenticatedRequestHeaders();
+  const res = await fetch(`${baseUrl}/api/midtrans/status/${encodeURIComponent(orderId)}`, { headers });
   const data = await res.json();
   if (!res.ok) {
     throw new Error(data.error || 'Gagal memeriksa status Midtrans.');
@@ -139,8 +155,10 @@ export async function cancelMidtransOrder(orderId: string): Promise<void> {
   const baseUrl = getOptionalMidtransProxyUrl();
   if (!orderId || baseUrl === null) return;
   try {
+    const headers = await getAuthenticatedRequestHeaders();
     await fetch(`${baseUrl}/api/midtrans/cancel/${encodeURIComponent(orderId)}`, {
       method: 'POST',
+      headers,
     });
   } catch {
     // Ignore cancel network issues

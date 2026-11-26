@@ -1,0 +1,101 @@
+name: Android APK
+
+on:
+  push:
+    branches:
+      - fix/audit-kasir-umkm
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-android:
+    name: Validate and build installable APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      VITE_MIDTRANS_PROXY_URL: ${{ secrets.VITE_MIDTRANS_PROXY_URL }}
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+      KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      KEYSTORE_PATH: ${{ github.workspace }}/android/kasirumkm-release.jks
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Validate required Supabase build configuration
+        shell: bash
+        run: |
+          if [[ -z "$VITE_SUPABASE_URL" || -z "$VITE_SUPABASE_ANON_KEY" ]]; then
+            echo "::error::Tambahkan GitHub Actions Secrets VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY sebelum build APK."
+            exit 1
+          fi
+          if [[ "$VITE_SUPABASE_URL" != https://* ]]; then
+            echo "::error::VITE_SUPABASE_URL harus menggunakan HTTPS."
+            exit 1
+          fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies and refresh lockfile
+        run: npm install --no-audit --no-fund
+
+      - name: TypeScript validation
+        run: npm run lint
+
+      - name: Build web application
+        run: npm run build
+
+      - name: Synchronize Capacitor Android
+        run: npx cap sync android
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      # Invoke the wrapper through bash so builds do not depend on the
+      # executable bit being preserved by Git/checkout on the runner.
+      - name: Build Android debug APK
+        working-directory: android
+        run: bash ./gradlew --no-daemon assembleDebug
+
+      - name: Prepare release signing key
+        if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' && env.STORE_PASSWORD != '' && env.KEY_ALIAS != '' && env.KEY_PASSWORD != '' }}
+        shell: bash
+        run: printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/kasirumkm-release.jks
+
+      - name: Build signed release APK
+        if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' && env.STORE_PASSWORD != '' && env.KEY_ALIAS != '' && env.KEY_PASSWORD != '' }}
+        working-directory: android
+        run: bash ./gradlew --no-daemon assembleRelease
+
+      - name: Upload signed release APK
+        if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' && env.STORE_PASSWORD != '' && env.KEY_ALIAS != '' && env.KEY_PASSWORD != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: KASIR-UMKM-Android-Release
+          path: android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload installable APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: KASIR-UMKM-Android-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
