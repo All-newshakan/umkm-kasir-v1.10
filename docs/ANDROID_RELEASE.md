@@ -37,3 +37,6 @@ Workflow `Android APK` menjalankan pemeriksaan TypeScript, build web, Capacitor 
 - Build APK release bertanda tangan, uji instalasi/upgrade, dan simpan signing key dengan aman.
 
 Jika signing secrets belum tersedia, workflow hanya menghasilkan APK debug untuk pengujian. Jika keempat signing secrets tersedia, workflow juga menghasilkan APK release bertanda tangan. Simpan keystore asli dan kata sandinya secara aman; jangan commit ke repository. Jangan membuat keystore baru untuk setiap update karena pengguna tidak dapat memasang pembaruan di atas aplikasi yang ditandatangani dengan kunci berbeda.
+
+
+Build terakhir dipicu melalui push ke branch `fix/audit-kasir-umkm`; periksa tab Actions untuk status build dan artifact.
