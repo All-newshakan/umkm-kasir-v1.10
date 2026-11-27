@@ -67,6 +67,7 @@ function MainApp() {
   // Do not start RLS-protected data subscriptions until the authenticated
   // user's profile/owner membership repair RPC has completed.
   const [accessRepairReady, setAccessRepairReady] = useState(false);
+  const lastSessionUidRef = useRef<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [offlineWarning, setOfflineWarning] = useState<string>('');
 
@@ -155,6 +156,15 @@ function MainApp() {
     }
 
     const applySessionUser = (nextUser: User | null) => {
+      const nextUid = nextUser?.id ?? null;
+      if (lastSessionUidRef.current === nextUid) {
+        // Token refreshes for the same user must not restart the data bootstrap.
+        setUser(nextUser);
+        setAuthReady(true);
+        return;
+      }
+      lastSessionUidRef.current = nextUid;
+
       setUser(nextUser);
       setAuthReady(true);
       setAccessRepairReady(false);
