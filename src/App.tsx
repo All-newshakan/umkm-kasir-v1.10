@@ -64,6 +64,9 @@ import { TransactionsHistoryView } from './pages/TransactionsHistoryView';
 
 function MainApp() {
   const [authReady, setAuthReady] = useState(false);
+  // Do not start RLS-protected data subscriptions until the authenticated
+  // user's profile/owner membership repair RPC has completed.
+  const [accessRepairReady, setAccessRepairReady] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [offlineWarning, setOfflineWarning] = useState<string>('');
 
@@ -154,26 +157,38 @@ function MainApp() {
     const applySessionUser = (nextUser: User | null) => {
       setUser(nextUser);
       setAuthReady(true);
+      setAccessRepairReady(false);
+
+      // Clear data from any previous session before bootstrapping the new one.
+      setUserProfile(null);
+      setProfileLoaded(false);
+      setStore(null);
+      setStoreLoaded(false);
+      setStaffMember(null);
+      setPendingInvites([]);
+      setUserStores([]);
+      setAllStaff([]);
+      setStoreInvites([]);
+      setCategories([]);
+      setProducts([]);
+      setCustomers([]);
+      setTransactions([]);
+
       if (nextUser) {
         void (async () => {
           try {
+            // This SECURITY DEFINER RPC repairs the owner/profile link. Data
+            // subscriptions must wait until it has finished to avoid querying
+            // RLS-protected tables with incomplete membership state.
             await ensureUserProfile(nextUser);
           } catch (err) {
             notify('error', formatFriendlyDatabaseError(err));
+          } finally {
+            setAccessRepairReady(true);
           }
         })();
       } else {
-        setUserProfile(null);
-        setProfileLoaded(false);
-        setStore(null);
-        setStoreLoaded(false);
-        setStaffMember(null);
-        setPendingInvites([]);
-        setUserStores([]);
-        setCategories([]);
-        setProducts([]);
-        setCustomers([]);
-        setTransactions([]);
+        setAccessRepairReady(true);
       }
     };
 
@@ -195,7 +210,7 @@ function MainApp() {
 
   // Subscribe userProfile + pending invites for signed-in user
   useEffect(() => {
-    if (!user) return;
+    if (!user || !accessRepairReady) return;
     setProfileLoaded(false);
     const emailLower = (user.email || '').trim().toLowerCase();
 
@@ -230,11 +245,12 @@ function MainApp() {
       unsubInvites();
       unsubUserStores();
     };
-  }, [user, notify]);
+  }, [user, accessRepairReady, notify]);
 
   useEffect(() => {
     if (
       user &&
+      accessRepairReady &&
       profileLoaded &&
       !userProfile?.activeStoreId &&
       userStores.length > 0 &&
@@ -247,13 +263,13 @@ function MainApp() {
         store: userStores[0],
       }).catch(() => undefined);
     }
-  }, [user, profileLoaded, userProfile?.activeStoreId, userStores, creatingNewStore]);
+  }, [user, accessRepairReady, profileLoaded, userProfile?.activeStoreId, userStores, creatingNewStore]);
 
   // Subscribe active store, staff record & store collections
   useEffect(() => {
     const storeId = userProfile?.activeStoreId;
     const emailLower = (user?.email || '').trim().toLowerCase();
-    if (!user || !storeId || !emailLower) {
+    if (!user || !accessRepairReady || !storeId || !emailLower) {
       setStore(null);
       setStoreLoaded(true);
       return;
@@ -310,7 +326,7 @@ function MainApp() {
       unsubAllStaff();
       unsubStoreInvites();
     };
-  }, [user, userProfile?.activeStoreId, userProfile?.role, notify]);
+  }, [user, accessRepairReady, userProfile?.activeStoreId, userProfile?.role, notify]);
 
   const role = userProfile?.role || 'OWNER';
   const permissions = useMemo(
